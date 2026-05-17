@@ -291,13 +291,13 @@ http.createServer((req, res) => {
         </head>
         <body>
             <div class="card">
-                <h1>Prometheus Deobfuscator Bot</h1>
+                <h1>⚡ Prometheus Deobfuscator Bot</h1>
                 <p>Status dashboard for the advanced automated deobfuscator bot.</p>
-                <div class="status">Bot is Active & Running</div>
+                <div class="status">🟢 Bot is Active & Running</div>
             </div>
         </body>
         </html>
     `);
 }).listen(PORT, () => {
-    console.log(\`Health check server listening on port \${PORT}\`);
+    console.log(`Health check server listening on port ${PORT}`);
 });
