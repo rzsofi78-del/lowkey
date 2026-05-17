@@ -33,24 +33,42 @@ do valid = true end
 const fs = require("fs").promises
 
 process.on("unhandledRejection", (reason) => {
-    console.log("uh oh.");
+    console.error("uh oh.", reason);
     process.exit(1);
 });
 
 process.on("uncaughtException", (error) => {
-    console.log("oh my days.");
+    console.error("oh my days.", error);
     process.exit(1);
 });
 
-const beautify = require("./mods/beautifier"), { parse, defaultOptions } = require("./mods/luaparse"), simpleAst = require("./mods/simple-ast");
-const { inline, setInlineOptions } = require("./mods/inlinev4"),
-    localify = require("./mods/localify")
-const { is, search, searchIs, print } = require("./mods/helper");
-const indexCleaner = require("./mods/indexCleaner");
-const indexFixer = require("./mods/indexFixer");
-const query = require("./mods/query");
-const postprocess = require("./reversing/postprocess");
-const optimize = require("./mods/optimize");
+// Self-healing require helper to support both local folder structures and flat GitHub/Render deployments
+const smartRequire = (modulePath) => {
+    try {
+        return require(modulePath);
+    } catch (e) {
+        if (e.code === 'MODULE_NOT_FOUND' && modulePath.startsWith('./')) {
+            const flatPath = modulePath.replace(/^\.\/(mods|reversing)\//, './');
+            try {
+                return require(flatPath);
+            } catch (fallbackErr) {
+                // If both fail, throw original error
+                throw e;
+            }
+        }
+        throw e;
+    }
+};
+
+const beautify = smartRequire("./mods/beautifier"), { parse, defaultOptions } = smartRequire("./mods/luaparse"), simpleAst = smartRequire("./mods/simple-ast");
+const { inline, setInlineOptions } = smartRequire("./mods/inlinev4"),
+    localify = smartRequire("./mods/localify")
+const { is, search, searchIs, print } = smartRequire("./mods/helper");
+const indexCleaner = smartRequire("./mods/indexCleaner");
+const indexFixer = smartRequire("./mods/indexFixer");
+const query = smartRequire("./mods/query");
+const postprocess = smartRequire("./reversing/postprocess");
+const optimize = smartRequire("./mods/optimize");
 
 //const { LuauState } = await import("luau-web")
 //import("luau-web").then((a) => LuauState = a.LuauState)
@@ -60,7 +78,7 @@ const optimize = require("./mods/optimize");
     @param {any} args
 */
 
-const runStep = (path, ...args) => require("./reversing/" + path)(...args)
+const runStep = (path, ...args) => smartRequire("./reversing/" + path)(...args)
 
 /** @param {any} a */
 const Do = (a) => a()
@@ -412,7 +430,7 @@ const deobfuscate = async (path, outFile = "out.lua") => {
 
     if (!process.argv[5]) {
         try {
-            require("./reversing/semanticRenamer")(output);
+            smartRequire("./reversing/semanticRenamer")(output);
         } catch (err) {
             console.error("semanticRenamer failed:", err);
         }
